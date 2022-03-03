@@ -85,9 +85,9 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         reward = 0
         next_state = generate_combined_state(t, window_size, stock_prices, agent.balance, len(agent.inventory))
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
-        print(t,'\ninventory',agent.inventory,'\ninventory len',len(agent.inventory),'\nstock prices',stock_prices[t], \
-            '\ninventory*stockprices + balance = ',len(agent.inventory)*stock_prices[t],'+', agent.balance,\
-            '\nprevious portfolio value',previous_portfolio_value,'\n')
+        # print(t,'\ninventory',agent.inventory,'\ninventory len',len(agent.inventory),'\nstock prices',stock_prices[t], \
+        #     '\ninventory*stockprices + balance = ',len(agent.inventory)*stock_prices[t],'+', agent.balance,\
+        #     '\nprevious portfolio value',previous_portfolio_value,'\n')
         
         if model_name == 'DDPG':
             actions = agent.act(state, t)
@@ -96,8 +96,8 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
             actions = agent.model.predict(state)[0]
             action = agent.act(state)
             
-        print('actions\n',actions)
-        print('action\n',action)
+        # print('actions\n',actions)
+        # print('action\n',action)
         # execute position
         # logging.info('Step: {}\tHold signal: {:.4} \tBuy signal: {:.4} \tSell signal: {:.4}'.format(t, actions[0], actions[1], actions[2]))
         # if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
@@ -117,7 +117,7 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
                 execution_result = execution_result[0]
             logging.info(execution_result)    
                         
-        print('---',execution_result,'\n')
+        # print('---',execution_result,'\n')
         # calculate reward
         current_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         unrealized_profit = current_portfolio_value - agent.initial_portfolio_value
