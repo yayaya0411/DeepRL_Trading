@@ -10,7 +10,7 @@ from utils import *
 
 parser = argparse.ArgumentParser(description='command line options')
 parser.add_argument('--model_name', action="store", dest="model_name", default='DQN', help="model name")
-parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2008-2018', help="stock name")
+parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2008_2018', help="stock name")
 parser.add_argument('--window_size', action="store", dest="window_size", default=10, type=int, help="span (days) of observation")
 parser.add_argument('--num_episode', action="store", dest="num_episode", default=10, type=int, help='episode number')
 parser.add_argument('--initial_balance', action="store", dest="initial_balance", default=50000, type=int, help='initial balance')
