@@ -1,0 +1,13 @@
+# temp folder
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# folder
+logs/*
+
+# google drive sync file
+desktop.ini
