@@ -147,6 +147,9 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
     if e % 5 == 0:
         if model_name == 'DQN':
             agent.model.save('saved_models/DQN_ep' + str(e) + '.h5')
+        elif model_name == 'DDQN':
+            agent.model.save('saved_models/DDQN_ep' + str(e) + '.h5')
+            agent.model_target.save('saved_models/DDQN_ep' + str(e) + '_target.h5')
         elif model_name == 'DDPG':
             agent.actor.model.save_weights('saved_models/DDPG_ep{}_actor.h5'.format(str(e)))
             agent.critic.model.save_weights('saved_models/DDPG_ep{}_critic.h5'.format(str(e)))
