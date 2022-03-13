@@ -151,7 +151,6 @@ def plot_all(stock_name, agent):
     df = pd.read_csv('./data/{}.csv'.format(stock_name))
     buy_prices = [df.iloc[t, 4] for t in agent.buy_dates]
     sell_prices = [df.iloc[t, 4] for t in agent.sell_dates]
-    print(type(agent.buy_dates))
     ax[0].set_title('{} Total Return on {}: ${:.2f}'.format(agent.model_type, stock_name, portfolio_return))
     ax[0].plot(df['Date'], df['Close'], color='black', label=stock_name)
     ax[0].scatter(agent.buy_dates, buy_prices, c='green', alpha=0.5, label='buy')
@@ -162,22 +161,17 @@ def plot_all(stock_name, agent):
     ax[0].grid()
 
     dates, buy_and_hold_portfolio_values, buy_and_hold_return = buy_and_hold_benchmark(stock_name, agent)
-    print(type(dates))
     agent_return = agent.portfolio_values[-1] - agent.initial_portfolio_value
     ax[1].set_title(f'{stock_name} in {agent.model_type} vs. Buy and Hold')
     ax[1].plot(dates, agent.portfolio_values, color='green', label=f'{agent.model_type} Total Return: ${agent_return:.2f}')#(agent.model_type, agent_return))
     ax[1].plot(dates, buy_and_hold_portfolio_values, color='blue', label='{} Buy and Hold Total Return: ${:.2f}'.format(stock_name, buy_and_hold_return))
-    plt.savefig(f'visualizations/{agent.model_type}_{stock_name}_evaluate.png')
-    # compare with S&P 500 performance in 2018 if stock is not S&P 500
-    # if '^GSPC' not in stock_name:
-    # 	dates, GSPC_buy_and_hold_portfolio_values, GSPC_buy_and_hold_return = buy_and_hold_benchmark('^GSPC_2018', agent)
-    # 	ax[1].plot(dates, GSPC_buy_and_hold_portfolio_values, color='red', label='S&P 500 2018 Buy and Hold Total Return: ${:.2f}'.format(GSPC_buy_and_hold_return))
-    # ax[1].set_ylabel('Portfolio Value ($)')
-    # ax[1].set_xticks(np.linspace(0, len(df), 10))
+    ax[1].set_ylabel('Portfolio Value ($)')
+    ax[1].set_xticks(np.linspace(0, len(df), 10))
     ax[1].legend()
-    # ax[1].grid()
-
+    ax[1].grid()
     plt.subplots_adjust(hspace=0.5)
+
+    plt.savefig(f'visualizations/{agent.model_type}_{stock_name}_evaluate.png')
     plt.show()
 
 
