@@ -23,6 +23,7 @@ num_episode = inputs.num_episode
 initial_balance = inputs.initial_balance
 
 stock_prices = stock_close_prices(stock_name)
+stock_margin = stock_margin(stock_name)
 trading_period = len(stock_prices) - 1  # 訓練期間，input stock data的總日期
 returns_across_episodes = []
 num_experience_replay = 0

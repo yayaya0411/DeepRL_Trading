@@ -18,6 +18,7 @@ yahoofinancials = "==1.5"
 tqdm = "*"
 
 [dev-packages]
+ipykernel = "*"
 
 [requires]
 python_version = "3.8"

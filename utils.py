@@ -38,6 +38,11 @@ def stock_close_prices(key):
     return prices
 
 
+def stock_margin(key):
+    data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
+    data = data.iloc[:,6:-1] # abandon OHLCV & date
+    return data.values
+
 def generate_price_state(stock_prices, end_index, window_size):
     '''
     return a state representation, defined as
@@ -51,6 +56,13 @@ def generate_price_state(stock_prices, end_index, window_size):
         period = -start_index * [stock_prices[0]] + stock_prices[0:end_index+1]
     return sigmoid(np.diff(period))
 
+def generate_margin_state(margin, end_index, window_size):
+    start_index = end_index - window_size
+    if start_index >= 0:
+        period = stock_prices[start_index:end_index+1]
+    else: # if end_index cannot suffice window_size, pad with prices on start_index
+        period = -start_index * [stock_prices[0]] + stock_prices[0:end_index+1]
+    return sigmoid(np.diff(period))
 
 def generate_portfolio_state(stock_price, balance, num_holding):
     '''logarithmic values of stock price, portfolio balance, and number of holding stocks'''
