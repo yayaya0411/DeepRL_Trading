@@ -8,6 +8,8 @@ import tqdm
 from utils import *
 
 
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
 parser = argparse.ArgumentParser(description='command line options')
 parser.add_argument('--model_name', action="store", dest="model_name", default='DQN', help="model name")
 parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2008_2018', help="stock name")
@@ -23,7 +25,7 @@ num_episode = inputs.num_episode
 initial_balance = inputs.initial_balance
 
 stock_prices = stock_close_prices(stock_name)
-stock_margin = stock_margin(stock_name)
+stock_margin = stock_margins(stock_name)
 trading_period = len(stock_prices) - 1  # 訓練期間，input stock data的總日期
 returns_across_episodes = []
 num_experience_replay = 0
@@ -75,7 +77,7 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
     logging.info(f'\nEpisode: {e}/{num_episode}')
 
     agent.reset() # reset to initial balance and hyperparameters
-    state = generate_combined_state(0, window_size, stock_prices, agent.balance, len(agent.inventory)) 
+    state = generate_combined_state(0, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory)) 
     # 將prince_state與portfolio_state 橫向串連起來橫向串連，作為input state
     # print(state)
 
@@ -84,7 +86,7 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
             logging.info(f'\n-------------------Period: {t}/{trading_period}-------------------')
 
         reward = 0
-        next_state = generate_combined_state(t, window_size, stock_prices, agent.balance, len(agent.inventory))
+        next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory))
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         # print(t,'\ninventory',agent.inventory,'\ninventory len',len(agent.inventory),'\nstock prices',stock_prices[t], \
         #     '\ninventory*stockprices + balance = ',len(agent.inventory)*stock_prices[t],'+', agent.balance,\

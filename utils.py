@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import pandas as pd
 from empyrical import sharpe_ratio
 from matplotlib import pyplot as plt
@@ -38,10 +39,10 @@ def stock_close_prices(key):
     return prices
 
 
-def stock_margin(key):
+def stock_margins(key):
     data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
     data = data.iloc[:,6:-1] # abandon OHLCV & date
-    return data.values
+    return data
 
 def generate_price_state(stock_prices, end_index, window_size):
     '''
@@ -50,6 +51,7 @@ def generate_price_state(stock_prices, end_index, window_size):
     note that a state has length window_size, a period has length window_size+1
     '''
     start_index = end_index - window_size
+    print('\n',start_index,end_index,'\n')
     if start_index >= 0:
         period = stock_prices[start_index:end_index+1]
     else: # if end_index cannot suffice window_size, pad with prices on start_index
@@ -57,19 +59,17 @@ def generate_price_state(stock_prices, end_index, window_size):
     return sigmoid(np.diff(period))
 
 def generate_margin_state(margin, end_index, window_size):
-    start_index = end_index - window_size
-    if start_index >= 0:
-        period = stock_prices[start_index:end_index+1]
-    else: # if end_index cannot suffice window_size, pad with prices on start_index
-        period = -start_index * [stock_prices[0]] + stock_prices[0:end_index+1]
-    return sigmoid(np.diff(period))
+    period = margin.iloc[end_index]    
+    # print('period\n',period)        
+    # return sigmoid(np.diff(period))
+    return period
 
 def generate_portfolio_state(stock_price, balance, num_holding):
     '''logarithmic values of stock price, portfolio balance, and number of holding stocks'''
     return [np.log(stock_price), np.log(balance), np.log(num_holding + 1e-6)]
 
 
-def generate_combined_state(end_index, window_size, stock_prices, balance, num_holding):
+def generate_combined_state(end_index, window_size, stock_prices, stock_margin, balance, num_holding):
     '''
     return a state representation, defined as
     adjacent stock prices differences after sigmoid function (for the past window_size days up to end_date) plus
@@ -77,6 +77,8 @@ def generate_combined_state(end_index, window_size, stock_prices, balance, num_h
     '''
     price_state = generate_price_state(stock_prices, end_index, window_size)
     # print(price_state.shape,price_state)
+    margin_state = generate_margin_state(stock_margin, end_index, window_size)
+    # print(margin_state.shape,margin_state)
     portfolio_state = generate_portfolio_state(stock_prices[end_index], balance, num_holding)
     # print(np.array(portfolio_state).shape,portfolio_state)
     state = np.array([np.concatenate((price_state, portfolio_state), axis=None)])  
