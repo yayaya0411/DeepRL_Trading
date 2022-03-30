@@ -41,7 +41,7 @@ def stock_close_prices(key):
 
 def stock_margins(key):
     data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
-    data = data.iloc[:,6:-1] # abandon OHLCV & date
+    data = data.iloc[:,6:-4] # abandon OHLCV & date
     return data
 
 def generate_price_state(stock_prices, end_index, window_size):
@@ -51,12 +51,13 @@ def generate_price_state(stock_prices, end_index, window_size):
     note that a state has length window_size, a period has length window_size+1
     '''
     start_index = end_index - window_size
-    print('\n',start_index,end_index,'\n')
+    # print('\n',start_index,end_index,'\n')
     if start_index >= 0:
         period = stock_prices[start_index:end_index+1]
     else: # if end_index cannot suffice window_size, pad with prices on start_index
         period = -start_index * [stock_prices[0]] + stock_prices[0:end_index+1]
-    return sigmoid(np.diff(period))
+    # return sigmoid(np.diff(period))
+    return np.diff(period)
 
 def generate_margin_state(margin, end_index, window_size):
     period = margin.iloc[end_index]    
@@ -76,13 +77,13 @@ def generate_combined_state(end_index, window_size, stock_prices, stock_margin, 
     logarithmic values of stock price at end_date, portfolio balance, and number of holding stocks
     '''
     price_state = generate_price_state(stock_prices, end_index, window_size)
-    # print(price_state.shape,price_state)
+    # print(type(price_state),price_state.shape)
     margin_state = generate_margin_state(stock_margin, end_index, window_size)
-    # print(margin_state.shape,margin_state)
+    # print(type(margin_state),margin_state.shape)
     portfolio_state = generate_portfolio_state(stock_prices[end_index], balance, num_holding)
-    # print(np.array(portfolio_state).shape,portfolio_state)
-    state = np.array([np.concatenate((price_state, portfolio_state), axis=None)])  
-    # print(state.shape,'\n',state)
+    # print(np.array(portfolio_state).shape)
+    state = np.array([np.concatenate((price_state, margin_state, portfolio_state), axis=None)])  
+    # print(state.shape)
     return state
 
 def treasury_bond_daily_return_rate():
