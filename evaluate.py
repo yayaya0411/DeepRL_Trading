@@ -2,7 +2,7 @@ import argparse
 import importlib
 import logging
 import sys
-
+import os
 import numpy as np
 # np.random.seed(3)  # for reproducible Keras operations
 
@@ -10,7 +10,7 @@ from utils import *
 
 
 parser = argparse.ArgumentParser(description='command line options')
-parser.add_argument('--model_to_load', action="store", dest="model_to_load", default='DQN_ep10', help="model name")
+parser.add_argument('--model_to_load', action="store", dest="model_to_load", default='DQN', help="model name")
 parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2018_2021', help="stock name")
 parser.add_argument('--initial_balance', action="store", dest="initial_balance", default=50000, type=int, help='initial balance')
 inputs = parser.parse_args()
@@ -18,6 +18,7 @@ inputs = parser.parse_args()
 model_to_load = inputs.model_to_load
 model_name = model_to_load.split('_')[0]
 stock_name = inputs.stock_name
+stock_margin = stock_margins(stock_name)
 initial_balance = inputs.initial_balance
 display = True
 window_size = 10
@@ -25,6 +26,7 @@ action_dict = {0: 'Hold', 1: 'Hold', 2: 'Sell'}
 
 # select evaluation model
 model = importlib.import_module(f'agents.{model_name}')
+agent = model.Agent(state_dim=13+3, balance=initial_balance, is_eval=True, model_name=model_name)
 
 def hold():
     logging.info('Hold')
@@ -51,11 +53,9 @@ logging.basicConfig(filename=f'logs/{model_name}_evaluation_{stock_name}.log', f
 
 portfolio_return = 0
 while portfolio_return == 0: # a hack to avoid stationary case
-    agent = model.Agent(state_dim=13, balance=initial_balance, is_eval=True, model_name=model_to_load)
     stock_prices = stock_close_prices(stock_name)
     trading_period = len(stock_prices) - 1
-    state = generate_combined_state(0, window_size, stock_prices, agent.balance, len(agent.inventory))
-
+    state = generate_combined_state(0, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory)) 
     for t in range(1, trading_period + 1):
         if model_name == 'DDPG':
             actions = agent.act(state, t)
@@ -64,10 +64,10 @@ while portfolio_return == 0: # a hack to avoid stationary case
             actions = agent.model.predict(state)[0]
             action = agent.act(state)
 
-        # print('actions:', actions)
-        # print('chosen action:', action)
+        print(state)
+        print('actions:', action, actions)
 
-        next_state = generate_combined_state(t, window_size, stock_prices, agent.balance, len(agent.inventory))
+        next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory)) 
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         
         # execute position

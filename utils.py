@@ -59,7 +59,7 @@ def generate_price_state(stock_prices, end_index, window_size):
     # return sigmoid(np.diff(period))
     return np.diff(period)
 
-def generate_margin_state(margin, end_index, window_size):
+def generate_margin_state(margin, end_index ):
     period = margin.iloc[end_index]    
     # print('period\n',period)        
     # return sigmoid(np.diff(period))
@@ -78,11 +78,12 @@ def generate_combined_state(end_index, window_size, stock_prices, stock_margin, 
     '''
     price_state = generate_price_state(stock_prices, end_index, window_size)
     # print(type(price_state),price_state.shape)
-    margin_state = generate_margin_state(stock_margin, end_index, window_size)
+    margin_state = generate_margin_state(stock_margin, end_index)
     # print(type(margin_state),margin_state.shape)
     portfolio_state = generate_portfolio_state(stock_prices[end_index], balance, num_holding)
     # print(np.array(portfolio_state).shape)
-    state = np.array([np.concatenate((price_state, margin_state, portfolio_state), axis=None)])  
+    # state = np.array([np.concatenate((price_state, margin_state, portfolio_state), axis=None)])  
+    state = np.array([np.concatenate((margin_state, portfolio_state), axis=None)])  
     # print(state.shape)
     return state
 

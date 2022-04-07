@@ -33,7 +33,7 @@ action_dict = {0: 'Hold', 1: 'Buy', 2: 'Sell'}
 
 # select learning model
 model = importlib.import_module(f'agents.{model_name}')
-agent = model.Agent(state_dim=window_size + 3, balance=initial_balance)
+agent = model.Agent(state_dim=13 + 3, balance=initial_balance,model_name=model_name)
 
 def hold(actions):
     # encourage selling for profit and liquidity
@@ -79,14 +79,14 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
     agent.reset() # reset to initial balance and hyperparameters
     state = generate_combined_state(0, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory)) 
     # 將prince_state與portfolio_state 橫向串連起來橫向串連，作為input state
-    # print(state)
 
     for t in range(1, trading_period + 1):
         if t % 1000 == 0:
             logging.info(f'\n-------------------Period: {t}/{trading_period}-------------------')
-
+        # print(state)
         reward = 0
         next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory))
+        # display(pd.DataFrame(next_state))
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         # print(t,'\ninventory',agent.inventory,'\ninventory len',len(agent.inventory),'\nstock prices',stock_prices[t], \
         #     '\ninventory*stockprices + balance = ',len(agent.inventory)*stock_prices[t],'+', agent.balance,\
@@ -98,12 +98,10 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         else:
             actions = agent.model.predict(state)[0]
             action = agent.act(state)
-            
-        # print('actions\n',actions)
-        # print('action\n',action)
+        # print(f'{t} period',action,np.argmax(actions))
         # execute position
-        # logging.info('Step: {}\tHold signal: {:.4} \tBuy signal: {:.4} \tSell signal: {:.4}'.format(t, actions[0], actions[1], actions[2]))
-        # if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
+        logging.info('Step: {}\tHold signal: {:.4} \tBuy signal: {:.4} \tSell signal: {:.4}'.format(t, actions[0], actions[1], actions[2]))
+        if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
         if action == 0: # hold
             execution_result = hold(actions)
         if action == 1: # buy
@@ -120,7 +118,6 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
                 execution_result = execution_result[0]
             logging.info(execution_result)    
                         
-        # print('---',execution_result,'\n')
         # calculate reward
         current_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         unrealized_profit = current_portfolio_value - agent.initial_portfolio_value
@@ -138,8 +135,9 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         # experience replay
         if len(agent.memory) > agent.buffer_size:
             num_experience_replay += 1
-            loss = agent.experience_replay()
-            # logging.info('Episode: {}\tLoss: {:.2f}\tAction: {}\tReward: {:.2f}\tBalance: {:.2f}\tNumber of Stocks: {}'.format(e, loss, action_dict[action], reward, agent.balance, len(agent.inventory)))
+            loss,mini_batch = agent.experience_replay()
+            # print(t,len(mini_batch))
+            logging.info('Episode: {}\tLoss: {:.2f}\tAction: {}\tReward: {:.2f}\tBalance: {:.2f}\tNumber of Stocks: {}'.format(e, loss, action_dict[action], reward, agent.balance, len(agent.inventory)))
             agent.tensorboard.on_batch_end(num_experience_replay, {'loss': loss, 'portfolio value': current_portfolio_value})
 
         if done:
@@ -149,7 +147,7 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
     # save models periodically
     if e % 5 == 0:
         if model_name == 'DQN':
-            agent.model.save('saved_models/DQN_ep' + str(e) + '.h5')
+            agent.model.save(os.path.join(f'saved_models',f'{model_name}_{agent.state_dim}_dim.h5'))
         elif model_name == 'DDQN':
             agent.model.save('saved_models/DDQN_ep' + str(e) + '.h5')
             agent.model_target.save('saved_models/DDQN_ep' + str(e) + '_target.h5')

@@ -65,6 +65,7 @@ class Agent(Portfolio):
         if not self.is_eval and np.random.rand() <= self.epsilon:
             return random.randrange(self.action_dim)
         options = self.model.predict(state)
+        print(np.argmax(options[0]),options)
         return np.argmax(options[0])
 
     def experience_replay(self):
