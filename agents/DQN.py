@@ -63,9 +63,10 @@ class Agent(Portfolio):
 
     def experience_replay(self):
         # retrieve recent buffer_size long memory
-        mini_batch = [self.memory[i] for i in range(len(self.memory) - self.buffer_size + 1, len(self.memory))]
-        # print(len(mini_batch),'\n',mini_batch)
-        
+        batch = [self.memory[i] for i in range(len(self.memory) - self.buffer_size + 1, len(self.memory))]
+        sample_index = random.sample(range(29),10)
+        mini_batch = [batch[i] for i in sample_index]
+
         for state, actions, reward, next_state, done in mini_batch:
             if not done:
                 Q_target_value = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
