@@ -35,7 +35,7 @@ action_dict = {0: 'Hold', 1: 'Buy', 2: 'Sell'}
 model = importlib.import_module(f'agents.{model_name}')
 agent = model.Agent(state_dim=13 + 3, balance=initial_balance,model_name=model_name)
 
-def hold(actions):
+def hold(agent,t,actions):
     # encourage selling for profit and liquidity
     next_probable_action = np.argsort(actions)[1]
     if next_probable_action == 2 and len(agent.inventory) > 0:
@@ -45,20 +45,21 @@ def hold(actions):
             actions[next_probable_action] = 1 # reset this action's value to the highest
             return 'Hold', actions
 
-def buy(t):
+def buy(agent,t):
     if agent.balance > stock_prices[t]:
         agent.balance -= stock_prices[t]
         agent.inventory.append(stock_prices[t])
-        return 'Buy: ${:.2f}'.format(stock_prices[t])
+        reward=0
+        return 'Buy: ${:.2f}'.format(stock_prices[t]), reward
 
-def sell(t):
+def sell(agent,t):
     if len(agent.inventory) > 0:
         agent.balance += stock_prices[t]
         bought_price = agent.inventory.pop(0)
         profit = stock_prices[t] - bought_price
-        global reward
-        reward = profit
-        return 'Sell: ${:.2f} | Profit: ${:.2f}'.format(stock_prices[t], profit)
+        # global reward
+        # reward = profit
+        return 'Sell: ${:.2f} | Profit: ${:.2f}'.format(stock_prices[t], profit), reward
 
 # configure logging
 logging.basicConfig(filename=f'logs/{model_name}_training_{stock_name}.log', filemode='w',
@@ -83,14 +84,10 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
     for t in range(1, trading_period + 1):
         if t % 1000 == 0:
             logging.info(f'\n-------------------Period: {t}/{trading_period}-------------------')
-        # print(state)
         reward = 0
         next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory))
-        # display(pd.DataFrame(next_state))
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
-        # print(t,'\ninventory',agent.inventory,'\ninventory len',len(agent.inventory),'\nstock prices',stock_prices[t], \
-        #     '\ninventory*stockprices + balance = ',len(agent.inventory)*stock_prices[t],'+', agent.balance,\
-        #     '\nprevious portfolio value',previous_portfolio_value,'\n')
+
         
         if model_name == 'DDPG':
             actions = agent.act(state, t)
@@ -98,16 +95,15 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         else:
             actions = agent.model.predict(state)[0]
             action = agent.act(state)
-        # print(f'{t} period',action,np.argmax(actions))
         # execute position
         logging.info('Step: {}\tHold signal: {:.4} \tBuy signal: {:.4} \tSell signal: {:.4}'.format(t, actions[0], actions[1], actions[2]))
         if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
         if action == 0: # hold
-            execution_result = hold(actions)
+            execution_result = hold(agent,t,actions)
         if action == 1: # buy
-            execution_result = buy(t)      
+            execution_result, reward = buy(agent,t)      
         if action == 2: # sell
-            execution_result = sell(t)        
+            execution_result, reward = sell(agent,t)        
         
         # check execution result
         if execution_result is None:
@@ -121,7 +117,7 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         # calculate reward
         current_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
         unrealized_profit = current_portfolio_value - agent.initial_portfolio_value
-        reward += unrealized_profit
+        # reward += unrealized_profit
 
         agent.portfolio_values.append(current_portfolio_value)
         agent.return_rates.append((current_portfolio_value - previous_portfolio_value) / previous_portfolio_value)
@@ -145,9 +141,9 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
             returns_across_episodes.append(portfolio_return)
 
     # save models periodically
-    if e % 5 == 0:
+    if e % 20 == 0:
         if model_name == 'DQN':
-            agent.model.save(os.path.join(f'saved_models',f'{model_name}_{agent.state_dim}_dim.h5'))
+            agent.model.save(os.path.join(f'saved_models',f'{model_name}_{agent.state_dim}_dim_ep{e}.h5'))
         elif model_name == 'DDQN':
             agent.model.save('saved_models/DDQN_ep' + str(e) + '.h5')
             agent.model_target.save('saved_models/DDQN_ep' + str(e) + '_target.h5')

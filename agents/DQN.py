@@ -41,8 +41,9 @@ class Agent(Portfolio):
     def model(self):
         model = Sequential()
         model.add(Dense(units=64, input_dim=self.state_dim, activation='relu'))
+        model.add(Dense(units=128, activation='relu'))
+        model.add(Dense(units=64, activation='relu'))
         model.add(Dense(units=32, activation='relu'))
-        model.add(Dense(units=8, activation='relu'))
         model.add(Dense(self.action_dim, activation='softmax'))
         model.compile(loss='mse', optimizer=Adam(lr=0.01))
         return model
