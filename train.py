@@ -12,9 +12,9 @@ pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 parser = argparse.ArgumentParser(description='command line options')
 parser.add_argument('--model_name', action="store", dest="model_name", default='DQN', help="model name")
-parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2008_2018', help="stock name")
+parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2013', help="stock name")
 parser.add_argument('--window_size', action="store", dest="window_size", default=10, type=int, help="span (days) of observation")
-parser.add_argument('--num_episode', action="store", dest="num_episode", default=10, type=int, help='episode number')
+parser.add_argument('--num_episode', action="store", dest="num_episode", default=100, type=int, help='episode number')
 parser.add_argument('--initial_balance', action="store", dest="initial_balance", default=50000, type=int, help='initial balance')
 inputs = parser.parse_args()
 
@@ -41,7 +41,7 @@ def hold(agent,t,actions):
     if next_probable_action == 2 and len(agent.inventory) > 0:
         max_profit = stock_prices[t] - min(agent.inventory)
         if max_profit > 0:
-            sell(t)
+            sell(agent,t)
             actions[next_probable_action] = 1 # reset this action's value to the highest
             return 'Hold', actions
 
@@ -50,7 +50,11 @@ def buy(agent,t):
         agent.balance -= stock_prices[t]
         agent.inventory.append(stock_prices[t])
         reward=0
-        return 'Buy: ${:.2f}'.format(stock_prices[t]), reward
+        # return 'Buy: ${:.2f}'.format(stock_prices[t]), reward
+        return f'Buy: ${stock_prices[t]:.2f}', reward
+    else:
+        reward=0
+        return f'Buy: no cash to buy', reward    
 
 def sell(agent,t):
     if len(agent.inventory) > 0:
@@ -58,8 +62,12 @@ def sell(agent,t):
         bought_price = agent.inventory.pop(0)
         profit = stock_prices[t] - bought_price
         # global reward
-        # reward = profit
-        return 'Sell: ${:.2f} | Profit: ${:.2f}'.format(stock_prices[t], profit), reward
+        reward = profit
+        # return 'Sell: ${:.2f} | Profit: ${:.2f}'.format(stock_prices[t], profit), reward
+        return f'Sell: ${stock_prices[t]:.2f} | Profit: ${profit:.2f}', reward
+    else:
+        reward=0
+        return f'Sell: No stock to sell', reward 
 
 # configure logging
 logging.basicConfig(filename=f'logs/{model_name}_training_{stock_name}.log', filemode='w',
@@ -133,7 +141,8 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
             num_experience_replay += 1
             loss,mini_batch = agent.experience_replay()
             # print(t,len(mini_batch))
-            logging.info('Episode: {}\tLoss: {:.2f}\tAction: {}\tReward: {:.2f}\tBalance: {:.2f}\tNumber of Stocks: {}'.format(e, loss, action_dict[action], reward, agent.balance, len(agent.inventory)))
+            # logging.info(f'Episode: {e}\tLoss: {loss:.2f}\tAction: {action_dict[action]}\tReward: {reward:.2f}\tBalance: {agent.balance:.2f}\tNumber of Stocks: {len(agent.inventory)}'.format(e, loss, action_dict[action], reward, agent.balance, len(agent.inventory)))
+            logging.info(f'Episode: {e}\tLoss: {loss:.2f}\tAction: {action_dict[action]}\tReward: {reward:.2f}\tBalance: {agent.balance:.2f}\tNumber of Stocks: {len(agent.inventory)}')
             agent.tensorboard.on_batch_end(num_experience_replay, {'loss': loss, 'portfolio value': current_portfolio_value})
 
         if done:

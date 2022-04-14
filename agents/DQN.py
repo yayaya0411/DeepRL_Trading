@@ -14,7 +14,7 @@ from utils import Portfolio
 # reference:
 # https://arxiv.org/pdf/1312.5602.pdf
 class Agent(Portfolio):
-    def __init__(self, state_dim, balance, is_eval=True, model_name=""):
+    def __init__(self, state_dim, balance, is_eval=False, model_name=""):
         super().__init__(balance=balance)
         self.model_type = 'DQN'
         self.state_dim = state_dim
@@ -31,8 +31,8 @@ class Agent(Portfolio):
         if self.is_eval: 
             self.model = load_model(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim.h5'))    
             print(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim.h5'))
-        # else:
-            # self.model()
+        else:
+            self.model = self.model()
         # print(self.model().summary())
 
         self.tensorboard = TensorBoard(log_dir='./logs/DQN_tensorboard', update_freq=90)
@@ -57,7 +57,6 @@ class Agent(Portfolio):
 
     def act(self, state):
         if not self.is_eval and np.random.rand() <= self.epsilon:
-            print('if ')
             return random.randrange(self.action_dim)
         options = self.model.predict(state)
         return np.argmax(options[0])

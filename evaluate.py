@@ -11,7 +11,7 @@ from utils import *
 
 parser = argparse.ArgumentParser(description='command line options')
 parser.add_argument('--model_to_load', action="store", dest="model_to_load", default='DQN', help="model name")
-parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2018_2021', help="stock name")
+parser.add_argument('--stock_name', action="store", dest="stock_name", default='0050_2014', help="stock name")
 parser.add_argument('--initial_balance', action="store", dest="initial_balance", default=50000, type=int, help='initial balance')
 inputs = parser.parse_args()
 
