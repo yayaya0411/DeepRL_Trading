@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 
-from utils import Portfolio
+from utility.utils import Portfolio
 
 
 # references:

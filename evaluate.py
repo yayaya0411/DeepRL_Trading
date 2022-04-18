@@ -6,7 +6,7 @@ import os
 import numpy as np
 # np.random.seed(3)  # for reproducible Keras operations
 
-from utils import *
+from utility.utils import *
 
 
 parser = argparse.ArgumentParser(description='command line options')

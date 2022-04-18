@@ -5,7 +5,8 @@ import sys
 import time
 import tqdm
 
-from utils import *
+from utility.action import *
+from utility.utils import *
 
 
 pd.set_option('display.float_format', lambda x: '%.3f' % x)
@@ -31,44 +32,6 @@ returns_across_episodes = []
 num_experience_replay = 0
 action_dict = {0: 'Hold', 1: 'Buy', 2: 'Sell'}
 
-# select learning model
-model = importlib.import_module(f'agents.{model_name}')
-agent = model.Agent(state_dim=13 + 3, balance=initial_balance,model_name=model_name)
-
-def hold(agent,t,actions):
-    # encourage selling for profit and liquidity
-    next_probable_action = np.argsort(actions)[1]
-    if next_probable_action == 2 and len(agent.inventory) > 0:
-        max_profit = stock_prices[t] - min(agent.inventory)
-        if max_profit > 0:
-            sell(agent,t)
-            actions[next_probable_action] = 1 # reset this action's value to the highest
-            return 'Hold', actions
-
-def buy(agent,t):
-    if agent.balance > stock_prices[t]:
-        agent.balance -= stock_prices[t]
-        agent.inventory.append(stock_prices[t])
-        reward=0
-        # return 'Buy: ${:.2f}'.format(stock_prices[t]), reward
-        return f'Buy: ${stock_prices[t]:.2f}', reward
-    else:
-        reward=0
-        return f'Buy: no cash to buy', reward    
-
-def sell(agent,t):
-    if len(agent.inventory) > 0:
-        agent.balance += stock_prices[t]
-        bought_price = agent.inventory.pop(0)
-        profit = stock_prices[t] - bought_price
-        # global reward
-        reward = profit
-        # return 'Sell: ${:.2f} | Profit: ${:.2f}'.format(stock_prices[t], profit), reward
-        return f'Sell: ${stock_prices[t]:.2f} | Profit: ${profit:.2f}', reward
-    else:
-        reward=0
-        return f'Sell: No stock to sell', reward 
-
 # configure logging
 logging.basicConfig(filename=f'logs/{model_name}_training_{stock_name}.log', filemode='w',
                     format='[%(asctime)s.%(msecs)03d %(filename)s:%(lineno)3s] %(message)s', 
@@ -80,6 +43,10 @@ logging.info(f'Window Size:              {window_size} days')
 logging.info(f'Training Episode:         {num_episode}')
 logging.info(f'Model Name:               {model_name}')
 logging.info('Initial Portfolio Value: ${:,}'.format(initial_balance))
+
+# select learning model
+model = importlib.import_module(f'agents.{model_name}')
+agent = model.Agent(state_dim=13 + 3, balance=initial_balance,model_name=model_name)
 
 start_time = time.time()
 for e in tqdm.tqdm(range(1, num_episode + 1)):
@@ -95,7 +62,6 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         reward = 0
         next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory))
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
-
         
         if model_name == 'DDPG':
             actions = agent.act(state, t)
@@ -107,11 +73,11 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
         logging.info('Step: {}\tHold signal: {:.4} \tBuy signal: {:.4} \tSell signal: {:.4}'.format(t, actions[0], actions[1], actions[2]))
         if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
         if action == 0: # hold
-            execution_result = hold(agent,t,actions)
+            execution_result = hold(agent,stock_prices,t,actions)
         if action == 1: # buy
-            execution_result, reward = buy(agent,t)      
+            execution_result, reward = buy(agent,stock_prices,t)      
         if action == 2: # sell
-            execution_result, reward = sell(agent,t)        
+            execution_result, reward = sell(agent,stock_prices,t)        
         
         # check execution result
         if execution_result is None:

@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Input, Dense, Concatenate
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.optimizers import Adam
 
-from utils import Portfolio
+from utility.utils import Portfolio
 
 # Tensorflow GPU configuration
 config = tf.compat.v1.ConfigProto()
