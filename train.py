@@ -5,7 +5,7 @@ import sys
 import time
 import tqdm
 
-from utility.action import *
+# from utility.action import *
 from utility.utils import *
 
 
@@ -31,6 +31,44 @@ trading_period = len(stock_prices) - 1  # 訓練期間，input stock data的總�
 returns_across_episodes = []
 num_experience_replay = 0
 action_dict = {0: 'Hold', 1: 'Buy', 2: 'Sell'}
+
+def buy(agent,stock_prices,t):
+    if agent.balance > stock_prices[t]:
+        # buy maximum stocks 
+        buy_num = int(agent.balance/stock_prices[t])
+        agent.balance -= stock_prices[t] * buy_num
+        agent.inventory.extend([stock_prices[t]]*buy_num)
+        agent.buy_dates.append(t)
+        reward=0
+        return f'Buy: ${stock_prices[t]:.2f}, {buy_num} stocks | Reward: ${reward:.2f}', reward
+    else:
+        reward=0
+        return f'Buy: no cash to buy | Reward: ${reward:.2f}', reward
+
+def sell(agent,stock_prices,t):
+    if len(agent.inventory) > 0:
+        sell_num = len(agent.inventory) #持有股數
+        sell_balance = stock_prices[t] * sell_num # 當日賣出總額
+        bought_balance = agent.inventory[0] * sell_num # 當初購買價格
+        reward = sell_balance - bought_balance
+        agent.balance += sell_balance
+        agent.inventory = []
+        agent.sell_dates.append(t)
+        return f'Sell: ${stock_prices[t]:.2f}, {sell_num} stocks | Reward: ${reward:.2f}', reward
+    else:
+        reward=0
+        return f'Sell: No stocks to sell | Reward: ${reward:.2f}', reward
+
+def hold(agent,stock_prices,t,actions):
+    # encourage selling for profit and liquidity
+    next_probable_action = np.argsort(actions)[1]
+    if next_probable_action == 2 and len(agent.inventory) > 0:
+        max_profit = stock_prices[t] - min(agent.inventory)
+        if max_profit > 0:
+            sell(agent,stock_prices,t)
+            actions[next_probable_action] = 1 # reset this action's value to the highest
+            return 'Hold', actions
+
 
 # configure logging
 logging.basicConfig(filename=f'logs/{model_name}_training_{stock_name}.log', filemode='w',
@@ -84,8 +122,8 @@ for e in tqdm.tqdm(range(1, num_episode + 1)):
             reward -= treasury_bond_daily_return_rate() * agent.balance  # missing opportunity
         else:
             if isinstance(execution_result, tuple): # if execution_result is 'Hold'
-                actions = execution_result[1]
                 execution_result = execution_result[0]
+                actions = execution_result[1]
             logging.info(execution_result)    
                         
         # calculate reward

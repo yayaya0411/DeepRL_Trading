@@ -8,7 +8,8 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 
-from utility.utils import Portfolio
+# from utility.utils import Portfolio
+from agents.portfolio import Portfolio
 
 
 # reference:
@@ -29,8 +30,7 @@ class Agent(Portfolio):
         self.is_eval = is_eval
         # self.model = load_model(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim.h5')) if is_eval else self.model()
         if self.is_eval: 
-            self.model = load_model(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim.h5'))    
-            print(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim.h5'))
+            self.model = load_model(os.path.join(f'saved_models',f'{model_name}_{self.state_dim}_dim_ep180.h5'))    
         else:
             self.model = self.model()
         # print(self.model().summary())
