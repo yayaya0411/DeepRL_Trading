@@ -11,7 +11,7 @@ def sigmoid(x):
 def softmax(x):
     return np.exp(x) / np.sum(np.exp(x))
 
-
+# original stock price state
 def stock_close_prices(key):
     '''return a list containing stock close prices from a .csv file'''
     prices = []
@@ -19,12 +19,6 @@ def stock_close_prices(key):
     for line in lines[1:]:
         prices.append(float(line.split(",")[4]))
     return prices
-
-
-def stock_margins(key):
-    data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
-    data = data.iloc[:,6:-4] # abandon OHLCV & date
-    return data
 
 def generate_price_state(stock_prices, end_index, window_size):
     '''
@@ -38,35 +32,51 @@ def generate_price_state(stock_prices, end_index, window_size):
         period = stock_prices[start_index:end_index+1]
     else: # if end_index cannot suffice window_size, pad with prices on start_index
         period = -start_index * [stock_prices[0]] + stock_prices[0:end_index+1]
-    # return sigmoid(np.diff(period))
-    return np.diff(period)
+    return sigmoid(np.diff(period))
+    
+# sigmoid(day by day diff) as state
+def stock_sigmoids(key):
+    data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
+    data = data.drop('Date',axis=1)
+    data = diff_sigmoid(data)
+    return data
+
+def diff_sigmoid(data):
+    # diff = data.diff()
+    diff = data.pct_change()
+    diff = diff.fillna(0)
+    return sigmoid(diff)
+
+def generate_sigmoid_state(stock, end_index ):
+    period = stock.iloc[end_index]    
+    return period
+
+# each day data as state
+def stock_margins(key):
+    data = pd.read_csv(os.path.join("data",key+".csv"),index_col=0)    
+    data = data.iloc[:,6:-4] # abandon OHLCV & date
+    return data
 
 def generate_margin_state(margin, end_index ):
     period = margin.iloc[end_index]    
-    # print('period\n',period)        
-    # return sigmoid(np.diff(period))
     return period
 
+# logarithmic values of stock price, portfolio balance, and number of holding stocks
 def generate_portfolio_state(stock_price, balance, num_holding):
-    '''logarithmic values of stock price, portfolio balance, and number of holding stocks'''
     return [np.log(stock_price), np.log(balance), np.log(num_holding + 1e-6)]
 
-
-def generate_combined_state(end_index, window_size, stock_prices, stock_margin, balance, num_holding):
-    '''
-    return a state representation, defined as
-    adjacent stock prices differences after sigmoid function (for the past window_size days up to end_date) plus
-    logarithmic values of stock price at end_date, portfolio balance, and number of holding stocks
-    '''
+# combine state
+def generate_combined_state(end_index, window_size, stock_prices, stock_margin, stock_sigmoid , balance, num_holding):
     price_state = generate_price_state(stock_prices, end_index, window_size)
-    # print(type(price_state),price_state.shape)
+    
+    sigmoid_state = generate_sigmoid_state(stock_sigmoid, end_index)
+    
     margin_state = generate_margin_state(stock_margin, end_index)
-    # print(type(margin_state),margin_state.shape)
+
     portfolio_state = generate_portfolio_state(stock_prices[end_index], balance, num_holding)
-    # print(np.array(portfolio_state).shape)
+
     # state = np.array([np.concatenate((price_state, margin_state, portfolio_state), axis=None)])  
-    state = np.array([np.concatenate((margin_state, portfolio_state), axis=None)])  
-    # print(state.shape)
+    state = np.array([np.concatenate((sigmoid_state, portfolio_state), axis=None)])  
     return state
 
 def treasury_bond_daily_return_rate():

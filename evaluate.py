@@ -82,7 +82,8 @@ while portfolio_return == 0: # a hack to avoid stationary case
 
         next_state = generate_combined_state(t, window_size, stock_prices, stock_margin, agent.balance, len(agent.inventory)) 
         previous_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance
-        
+
+        execution_result = f'{action} None'
         # execute position
         logging.info(f'Step: {t}')
         if action != np.argmax(actions): logging.info(f"\t\t'{action_dict[action]}' is an exploration.")
@@ -91,7 +92,7 @@ while portfolio_return == 0: # a hack to avoid stationary case
         if action == 1 and agent.balance > stock_prices[t]: 
             execution_result, reward, agent = buy(agent,stock_prices,t)  # buy
         if action == 2 and len(agent.inventory) > 0: 
-            execution_result, reward, agent = sell(agent,stock_prices,t)        # sell
+            execution_result, reward, agent = sell(agent,stock_prices,t) # sell
 
         logging.info(execution_result)    
         current_portfolio_value = len(agent.inventory) * stock_prices[t] + agent.balance

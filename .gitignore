@@ -8,6 +8,10 @@ __pycache__/
 
 # folder
 logs/*
+saved_models/*
+
+# files
+Pipfile*
 
 # google drive sync file
 desktop.ini

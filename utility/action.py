@@ -64,6 +64,10 @@ def hold(agent,stock_prices,t,actions):
             actions[next_probable_action] = 1 # reset this action's value to the highest
             return 'Hold', actions
 
+def hold_v2(agent,stock_prices,t,actions):
+    reward =  0
+    return 'Hold', reward
+
 def hold_eval():
     return 'Hold'
     logging.info('Hold')
